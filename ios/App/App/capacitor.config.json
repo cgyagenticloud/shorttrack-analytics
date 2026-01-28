@@ -1,0 +1,27 @@
+{
+	"appId": "com.shorttrack.analytics",
+	"appName": "ShortTrack Analytics",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	},
+	"ios": {
+		"contentInset": "automatic",
+		"allowsLinkPreview": false,
+		"scrollEnabled": true,
+		"backgroundColor": "#0f172a"
+	},
+	"plugins": {
+		"SplashScreen": {
+			"launchShowDuration": 2000,
+			"launchAutoHide": true,
+			"backgroundColor": "#0f172a",
+			"showSpinner": false,
+			"splashFullScreen": true,
+			"splashImmersive": true
+		}
+	},
+	"packageClassList": [
+		"SplashScreenPlugin"
+	]
+}
