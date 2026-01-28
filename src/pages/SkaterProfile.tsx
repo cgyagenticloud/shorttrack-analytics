@@ -88,12 +88,13 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
   const [selectedSkater, setSelectedSkater] = useState<Skater | null>(null);
 
   // Search results
+  // Search across ALL skaters (no category filter)
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
     const q = searchQuery.toLowerCase();
     return skaters
       .filter((s) => s.name.toLowerCase().includes(q))
-      .slice(0, 10);
+      .slice(0, 20);  // Show more results
   }, [skaters, searchQuery]);
 
   // Get profile data for selected skater
