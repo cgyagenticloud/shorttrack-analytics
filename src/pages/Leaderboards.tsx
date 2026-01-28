@@ -163,6 +163,9 @@ function RankBadge({ rank }: { rank: number }) {
   );
 }
 
+// Youth categories to exclude from leaderboards (Senior/Junior only)
+const YOUTH_CATEGORIES = ['youth_ja', 'youth_jb', 'youth_jc', 'youth_jd', 'youth_je', 'youth_jf', 'youth_jg'];
+
 export default function Leaderboards({ skaters, category }: Props) {
   const [activeBoard, setActiveBoard] = useState<LeaderboardType>('threat_score');
   const [gender, setGender] = useState<Gender | 'all'>('all');
@@ -171,18 +174,25 @@ export default function Leaderboards({ skaters, category }: Props) {
 
   const config = LEADERBOARD_CONFIGS.find((c) => c.key === activeBoard)!;
 
-  // Get nationalities from filtered skaters
+  // Get nationalities from filtered skaters (Senior/Junior only)
   const nationalities = useMemo(() => {
-    const cats = category === 'all' ? skaters : skaters.filter((s) => s.category === category);
+    const seniorJuniorOnly = skaters.filter((s) => !YOUTH_CATEGORIES.includes(s.category));
+    const cats = category === 'all' || YOUTH_CATEGORIES.includes(category)
+      ? seniorJuniorOnly 
+      : seniorJuniorOnly.filter((s) => s.category === category);
     const nats = new Set(cats.map((s) => s.nationality));
     return [...nats].sort();
   }, [skaters, category]);
 
   // Apply filters and sort
   const rankedSkaters = useMemo(() => {
-    let filtered = category === 'all' 
-      ? skaters 
-      : skaters.filter((s) => s.category === category);
+    // First filter out all youth categories - only show Senior and Junior
+    let filtered = skaters.filter((s) => !YOUTH_CATEGORIES.includes(s.category));
+
+    // Then apply category filter if not 'all' (only Senior/Junior at this point)
+    if (category !== 'all' && !YOUTH_CATEGORIES.includes(category)) {
+      filtered = filtered.filter((s) => s.category === category);
+    }
 
     if (gender !== 'all') {
       filtered = filtered.filter((s) => s.gender.toLowerCase() === gender.toLowerCase());
