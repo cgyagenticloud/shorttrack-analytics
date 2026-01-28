@@ -105,16 +105,23 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
     const skaterParts = selectedSkater.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
     const skaterFirst = skaterParts[0];
     const skaterLast = skaterParts[skaterParts.length - 1];
+    const skaterCountry = selectedSkater.nationality?.toUpperCase();
     
     for (const [, profile] of Object.entries(profiles)) {
       // Profile name format: "JIN  Daniel" -> ["JIN", "DANIEL"]
       const profileParts = profile.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
       const profileFirst = profileParts[profileParts.length - 1]; // Last part is first name
       const profileLast = profileParts[0]; // First part is last name
+      const profileCountry = profile.country?.toUpperCase();
       
-      // Match if both first and last names match (in either order)
-      if ((skaterFirst === profileFirst && skaterLast === profileLast) ||
-          (skaterFirst === profileLast && skaterLast === profileFirst)) {
+      // Must match BOTH first AND last names (in either order)
+      const nameMatch = (skaterFirst === profileFirst && skaterLast === profileLast) ||
+                       (skaterFirst === profileLast && skaterLast === profileFirst);
+      
+      // Also check country if available for better accuracy
+      const countryMatch = !skaterCountry || !profileCountry || skaterCountry === profileCountry;
+      
+      if (nameMatch && countryMatch) {
         return profile;
       }
     }
