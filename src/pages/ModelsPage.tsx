@@ -43,35 +43,35 @@ function KPI({ value, label }: { value: string | number; label: string }) {
 
 // Feature descriptions for explanations
 const OVERTAKE_FEATURE_DESCRIPTIONS: Record<string, string> = {
-  rank_before: '起步位置靠后 = 更多超车空间',
-  height: '身高优势 = 步幅更长',
-  lap_fraction: '比赛后期 = 超车难度增加',
-  age: '年龄较大 = 反应速度下降',
-  dist_1500: '1500m 耐力优势',
-  round_stage: '淘汰赛后轮 = 对手更强',
-  dist_500: '500m 冲刺速度优势',
-  gender: '性别差异',
-  dist_1000: '1000m 中距离优势',
-  is_last_lap: '最后一圈 = 冲刺机会',
+  rank_before: 'Starting behind = more room to overtake',
+  height: 'Taller = longer stride advantage',
+  lap_fraction: 'Later in race = harder to overtake',
+  age: 'Older = slower reflexes',
+  dist_1500: '1500m endurance advantage',
+  round_stage: 'Later rounds = stronger opponents',
+  dist_500: '500m sprint speed advantage',
+  gender: 'Gender difference',
+  dist_1000: '1000m middle-distance advantage',
+  is_last_lap: 'Last lap = final push opportunity',
 };
 
 const MEDAL_FEATURE_DESCRIPTIONS: Record<string, string> = {
-  net_passes: '净超车数 = 超车能力强',
-  avg_passes_per_race: '场均超车 = 攻击性强',
-  passes_made: '总超车次数 = 经验丰富',
-  starting_position: '起步位置靠前 = 优势更大',
-  times_passed: '被超车次数少 = 防守好',
-  distance: '比赛距离适应性',
-  style: '比赛风格适配',
-  height: '身高优势',
-  age: '年龄/经验因素',
-  gender: '性别组别',
-  total_races: '比赛场次 = 经验值',
-  avg_position: '平均名次 = 稳定性',
-  finals_rate: '进决赛率 = 竞争力',
-  threat_score: '威胁分数 = 综合实力',
-  clean_race_pct: '干净比赛率 = 少犯规',
-  penalty_rate: '犯规率高 = 负面影响',
+  net_passes: 'Net passes = overtaking ability',
+  avg_passes_per_race: 'Passes per race = aggressiveness',
+  passes_made: 'Total passes = experience',
+  starting_position: 'Front start = better advantage',
+  times_passed: 'Fewer times passed = good defense',
+  distance: 'Distance adaptability',
+  style: 'Racing style fit',
+  height: 'Height advantage',
+  age: 'Age/experience factor',
+  gender: 'Gender category',
+  total_races: 'Race count = experience level',
+  avg_position: 'Avg finish = consistency',
+  finals_rate: 'Finals rate = competitiveness',
+  threat_score: 'Threat score = overall strength',
+  clean_race_pct: 'Clean race % = fewer penalties',
+  penalty_rate: 'High penalty rate = negative impact',
 };
 
 function FeatureExplanationTable({ 
@@ -86,10 +86,10 @@ function FeatureExplanationTable({
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200">
-            <th className="text-left py-2 px-3 font-semibold text-gray-700">特征</th>
-            <th className="text-center py-2 px-1 font-semibold text-gray-700 w-16">效果</th>
-            <th className="text-left py-2 px-3 font-semibold text-gray-700">说明</th>
-            <th className="text-right py-2 px-3 font-semibold text-gray-700 w-20">重要性</th>
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">Feature</th>
+            <th className="text-center py-2 px-1 font-semibold text-gray-700 w-16">Effect</th>
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">Description</th>
+            <th className="text-right py-2 px-3 font-semibold text-gray-700 w-24">Importance</th>
           </tr>
         </thead>
         <tbody>
