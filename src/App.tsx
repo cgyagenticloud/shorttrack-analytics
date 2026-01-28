@@ -5,6 +5,7 @@ import { useData } from './hooks/useData';
 import { useFilters } from './hooks/useFilters';
 import RacePrep from './pages/RacePrep';
 import Scouting from './pages/Scouting';
+import Compare from './pages/Compare';
 import Progress from './pages/Progress';
 import Leaderboards from './pages/Leaderboards';
 import Analytics from './pages/Analytics';
@@ -60,6 +61,15 @@ export default function App() {
               path="/scouting"
               element={
                 <Scouting
+                  skaters={data.skaters}
+                  category={filters.category}
+                />
+              }
+            />
+            <Route
+              path="/compare"
+              element={
+                <Compare
                   skaters={data.skaters}
                   category={filters.category}
                 />
