@@ -45,7 +45,7 @@ export default function StyleChart({ skaters }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">Skater Styles</h2>
         <p className="text-gray-400 text-sm text-center py-8">No style data available</p>
       </div>
@@ -53,7 +53,7 @@ export default function StyleChart({ skaters }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4">
         Skater Styles
       </h2>

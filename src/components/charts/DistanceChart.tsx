@@ -27,7 +27,7 @@ export default function DistanceChart({ passes }: Props) {
     }));
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4">
         Overtakes by Distance
       </h2>

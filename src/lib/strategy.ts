@@ -68,6 +68,7 @@ export interface WinProbability {
   matchupAdj: number;      // -15 to +15 matchup adjustment
   podium: number;          // 0-100 top-3 probability
   explanation: string;
+  hasOpponents: boolean;   // true if calculated with actual opponents
 }
 
 export interface StrategyResult {
@@ -591,8 +592,13 @@ export function computeWinProbability(
     Math.min(20, myMedals * 2)
   ));
 
-  let avgOppStrength = 30; // default if no opponents
-  if (opponents.length > 0) {
+  // When no opponents, we can't calculate a real win probability
+  // Instead of defaulting to weak opponents, we'll use the skater's own strength
+  // to estimate a "field average" scenario
+  let avgOppStrength = myStrength; // Assume average field = similar strength (50/50)
+  const hasOpponents = opponents.length > 0;
+  
+  if (hasOpponents) {
     avgOppStrength = Math.min(100, Math.max(0,
       opponents.reduce((sum, o) => {
         const oppMedals = o.medals_total || 0;
@@ -631,15 +637,19 @@ export function computeWinProbability(
 
   // Explanation
   const parts: string[] = [];
-  parts.push(`Lane ${lane} base: ${laneBase}%`);
-  if (strengthAdj > 0) parts.push(`Strength edge: +${strengthAdj}%`);
-  else if (strengthAdj < 0) parts.push(`Strength gap: ${strengthAdj}%`);
-  else parts.push('Strength: even');
-  if (matchupAdj > 0) parts.push(`Style matchup: +${matchupAdj}%`);
-  else if (matchupAdj < 0) parts.push(`Style matchup: ${matchupAdj}%`);
+  if (!hasOpponents) {
+    parts.push(`Lane ${lane} base only (no opponents selected)`);
+  } else {
+    parts.push(`Lane ${lane} base: ${laneBase}%`);
+    if (strengthAdj > 0) parts.push(`Strength edge: +${strengthAdj}%`);
+    else if (strengthAdj < 0) parts.push(`Strength gap: ${strengthAdj}%`);
+    else parts.push('Strength: even');
+    if (matchupAdj > 0) parts.push(`Style matchup: +${matchupAdj}%`);
+    else if (matchupAdj < 0) parts.push(`Style matchup: ${matchupAdj}%`);
+  }
   const explanation = parts.join(' · ');
 
-  return { overall, laneBase, strengthAdj, matchupAdj, podium, explanation };
+  return { overall, laneBase, strengthAdj, matchupAdj, podium, explanation, hasOpponents };
 }
 
 // ── Main Strategy Generator ──

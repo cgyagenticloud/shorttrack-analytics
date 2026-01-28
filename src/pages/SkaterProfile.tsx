@@ -1,62 +1,43 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from 'recharts';
 import type { Skater } from '../types/data';
-import { STYLE_LABELS } from '../types/data';
+import { STYLE_LABELS, CATEGORY_LABELS } from '../types/data';
+
+interface TimeTrendEntry {
+  distance: number;
+  time: number;
+  time_str: string;
+  competition: string;
+  date: string | null;
+  place: number | null;
+  source: 'uss' | 'stl';
+}
+
+interface TimeTrendsData {
+  generated: string;
+  total_skaters: number;
+  trends: Record<string, Record<number, TimeTrendEntry[]>>;
+}
 
 interface Props {
   skaters: Skater[];
-  profiles: Record<string, SkaterProfile> | null;
-}
-
-interface SkaterProfile {
-  skater_id: number;
-  name: string;
-  country: string;
-  gender: string;
-  age: number;
-  age_category: string;
-  home_town: string | null;
-  club: string | null;
-  personal_bests: PersonalBest[];
-  distance_classifications?: DistanceClassification[];
-  overall_classification?: OverallClassification[];
-}
-
-interface PersonalBest {
-  distance: number;
-  class: string;
-  time: string;
-  competition: string;
-  date: string;
-}
-
-interface DistanceClassification {
-  distance: number;
-  class: string;
-  rank: string;
-}
-
-interface OverallClassification {
-  class: string;
-  rank: string;
-}
-
-function parseTimeToSeconds(t: string): number {
-  const s = t.trim();
-  if (s.includes(':')) {
-    const [mins, secs] = s.split(':');
-    return parseFloat(mins) * 60 + parseFloat(secs);
-  }
-  return parseFloat(s);
+  timeTrends: TimeTrendsData | null;
 }
 
 function formatTime(seconds: number): string {
@@ -68,13 +49,9 @@ function formatTime(seconds: number): string {
   return secs;
 }
 
-function parseDate(dateStr: string): Date {
-  // Format: "17.12. - 19.12.2021" or "10.09. - 11.09.2024"
-  // Take the first date
-  const parts = dateStr.split(' - ')[0].trim();
-  const [day, month, year] = parts.split('.');
-  const yearPart = year || dateStr.split('.').pop()?.match(/\d{4}/)?.[0] || '2024';
-  return new Date(parseInt(yearPart), parseInt(month) - 1, parseInt(day));
+function cleanEventName(name: string): string {
+  // Remove "(slug-X)" suffixes from event names
+  return name.replace(/\s*\(slug-\d+\)\s*/g, '').trim();
 }
 
 const DISTANCE_COLORS: Record<number, string> = {
@@ -83,88 +60,138 @@ const DISTANCE_COLORS: Record<number, string> = {
   1500: '#D97706',
 };
 
-export default function SkaterProfile({ skaters, profiles }: Props) {
+const CHART_COLORS = {
+  blue: '#2646A7',
+  gold: '#D97706',
+  red: '#DC2626',
+  green: '#059669',
+};
+
+const SAVED_SKATER_KEY = 'shorttrack_my_skater';
+
+export default function SkaterProfile({ skaters, timeTrends }: Props) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkater, setSelectedSkater] = useState<Skater | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
-  // Search results
-  // Search across ALL skaters (no category filter)
+  // Load saved skater on mount
+  useEffect(() => {
+    const savedId = localStorage.getItem(SAVED_SKATER_KEY);
+    if (savedId && skaters.length > 0) {
+      const found = skaters.find(s => s.id === savedId);
+      if (found) {
+        setSelectedSkater(found);
+        setIsSaved(true);
+      }
+    }
+  }, [skaters]);
+
+  // Check if current skater is saved
+  useEffect(() => {
+    if (selectedSkater) {
+      const savedId = localStorage.getItem(SAVED_SKATER_KEY);
+      setIsSaved(savedId === selectedSkater.id);
+    }
+  }, [selectedSkater]);
+
+  const handleSaveSkater = () => {
+    if (selectedSkater) {
+      localStorage.setItem(SAVED_SKATER_KEY, selectedSkater.id);
+      setIsSaved(true);
+    }
+  };
+
+  const handleUnsaveSkater = () => {
+    localStorage.removeItem(SAVED_SKATER_KEY);
+    setIsSaved(false);
+  };
+
+  // Search results - search across ALL skaters (no category filter)
+  // Handles both "daniel chen" and "CHEN Daniel" formats
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
+    const queryParts = searchQuery.toLowerCase().split(/\s+/).filter(p => p.length > 0);
+    
     return skaters
-      .filter((s) => s.name.toLowerCase().includes(q))
-      .slice(0, 20);  // Show more results
+      .filter((s) => {
+        const nameLower = s.name.toLowerCase();
+        // Match if ALL query parts are found anywhere in the name
+        return queryParts.every(part => nameLower.includes(part));
+      })
+      .slice(0, 20);
   }, [skaters, searchQuery]);
 
-  // Get profile data for selected skater
-  const skaterProfile = useMemo(() => {
-    if (!selectedSkater || !profiles) return null;
-    
-    // Normalize skater name: "Daniel JIN" -> ["DANIEL", "JIN"]
-    const skaterParts = selectedSkater.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
-    const skaterFirst = skaterParts[0];
-    const skaterLast = skaterParts[skaterParts.length - 1];
-    const skaterCountry = selectedSkater.nationality?.toUpperCase();
-    
-    for (const [, profile] of Object.entries(profiles)) {
-      // Profile name format: "JIN  Daniel" -> ["JIN", "DANIEL"]
-      const profileParts = profile.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
-      const profileFirst = profileParts[profileParts.length - 1]; // Last part is first name
-      const profileLast = profileParts[0]; // First part is last name
-      const profileCountry = profile.country?.toUpperCase();
-      
-      // Must match BOTH first AND last names (in either order)
-      const nameMatch = (skaterFirst === profileFirst && skaterLast === profileLast) ||
-                       (skaterFirst === profileLast && skaterLast === profileFirst);
-      
-      // Also check country if available for better accuracy
-      const countryMatch = !skaterCountry || !profileCountry || skaterCountry === profileCountry;
-      
-      if (nameMatch && countryMatch) {
-        return profile;
-      }
-    }
-    return null;
-  }, [selectedSkater, profiles]);
-
-  // Prepare time trend data for each distance
+  // Get time trend data from pre-computed USS+STL merged data
   const timeTrendData = useMemo(() => {
-    if (!skaterProfile?.personal_bests) return {};
+    if (!selectedSkater || !timeTrends) return {};
     
-    const byDistance: Record<number, { date: Date; time: number; competition: string; dateStr: string }[]> = {};
+    const skaterId = selectedSkater.id;
+    const skaterTrends = timeTrends.trends[skaterId];
+    if (!skaterTrends) return {};
     
-    for (const pb of skaterProfile.personal_bests) {
-      if (!byDistance[pb.distance]) {
-        byDistance[pb.distance] = [];
-      }
-      try {
-        const date = parseDate(pb.date);
-        const time = parseTimeToSeconds(pb.time);
-        if (!isNaN(time) && !isNaN(date.getTime())) {
-          byDistance[pb.distance].push({
-            date,
-            time,
-            competition: pb.competition,
-            dateStr: pb.date,
-          });
+    const byDistance: Record<number, { date: Date; time: number; competition: string; dateStr: string; source: string }[]> = {};
+    
+    for (const [distStr, entries] of Object.entries(skaterTrends)) {
+      const dist = parseInt(distStr);
+      byDistance[dist] = [];
+      
+      for (const entry of entries) {
+        if (!entry.date) continue;
+        
+        try {
+          const date = new Date(entry.date);
+          if (!isNaN(date.getTime())) {
+            byDistance[dist].push({
+              date,
+              time: entry.time,
+              competition: entry.competition,
+              dateStr: entry.date.split('T')[0],
+              source: entry.source,
+            });
+          }
+        } catch {
+          // Skip invalid data
         }
-      } catch (e) {
-        // Skip invalid data
       }
-    }
-    
-    // Sort by date
-    for (const dist of Object.keys(byDistance)) {
-      byDistance[parseInt(dist)].sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      byDistance[dist].sort((a, b) => a.date.getTime() - b.date.getTime());
     }
     
     return byDistance;
-  }, [skaterProfile]);
+  }, [selectedSkater, timeTrends]);
+
+  // Overtake style data (from Progress page)
+  const overtakeStyleData = useMemo(() => {
+    if (!selectedSkater) return [];
+    const s = selectedSkater.stats;
+    return [
+      { name: 'Early', value: s.passes_early, fill: CHART_COLORS.blue },
+      { name: 'Middle', value: s.passes_middle, fill: CHART_COLORS.gold },
+      { name: 'Late', value: s.passes_late, fill: CHART_COLORS.red },
+    ];
+  }, [selectedSkater]);
+
+  // Distance performance data
+  const distanceData = useMemo(() => {
+    if (!selectedSkater) return [];
+    return selectedSkater.distances.map((d) => ({
+      distance: `${d.distance}m`,
+      races: d.races,
+    }));
+  }, [selectedSkater]);
 
   const handleSelectSkater = (skater: Skater) => {
     setSelectedSkater(skater);
     setSearchQuery('');
+  };
+
+  const medalEmoji = (medal: string | null) => {
+    if (!medal) return '—';
+    const lower = medal.toLowerCase();
+    if (lower === 'gold') return '🥇';
+    if (lower === 'silver') return '🥈';
+    if (lower === 'bronze') return '🥉';
+    return medal;
   };
 
   return (
@@ -200,7 +227,7 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
                 <div>
                   <div className="font-medium">{skater.name}</div>
                   <div className="text-sm text-gray-500">
-                    {skater.nationality} • {skater.category === 'senior' ? 'Senior' : skater.category === 'junior' ? 'Junior' : skater.category}
+                    {skater.nationality} • {CATEGORY_LABELS[skater.category] || skater.category}
                   </div>
                 </div>
               </button>
@@ -220,67 +247,113 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
                 <h2 className="text-2xl font-bold text-gray-900">{selectedSkater.name}</h2>
                 <p className="text-gray-600">{selectedSkater.nationality}</p>
               </div>
-              {selectedSkater.stats.style && (
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  selectedSkater.stats.style === 'sprint' ? 'bg-green-100 text-green-800' :
-                  selectedSkater.stats.style === 'balanced' ? 'bg-purple-100 text-purple-800' :
-                  selectedSkater.stats.style === 'mid_surge' ? 'bg-blue-100 text-blue-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {STYLE_LABELS[selectedSkater.stats.style] || selectedSkater.stats.style}
-                </span>
-              )}
+              <div className="flex items-center gap-2">
+                {selectedSkater.stats.style && (
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    selectedSkater.stats.style === 'sprint' ? 'bg-green-100 text-green-800' :
+                    selectedSkater.stats.style === 'balanced' ? 'bg-purple-100 text-purple-800' :
+                    selectedSkater.stats.style === 'mid_surge' ? 'bg-blue-100 text-blue-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {STYLE_LABELS[selectedSkater.stats.style] || selectedSkater.stats.style}
+                  </span>
+                )}
+                {/* Save/Unsave button */}
+                <button
+                  onClick={isSaved ? handleUnsaveSkater : handleSaveSkater}
+                  className={`px-3 py-1 rounded-full text-sm font-medium border transition-colors ${
+                    isSaved 
+                      ? 'bg-yellow-100 text-yellow-800 border-yellow-300 hover:bg-yellow-200' 
+                      : 'bg-gray-100 text-gray-600 border-gray-300 hover:bg-gray-200'
+                  }`}
+                  title={isSaved ? 'Remove as my skater' : 'Save as my skater'}
+                >
+                  {isSaved ? '⭐ My Skater' : '☆ Save'}
+                </button>
+                {/* Race Prep link */}
+                <Link
+                  to="/"
+                  className="px-3 py-1 rounded-full text-sm font-medium bg-[#2646A7] text-white hover:bg-[#1d3a8a] transition-colors"
+                >
+                  🎯 Race Prep
+                </Link>
+              </div>
             </div>
 
-            {/* Info Table */}
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Info Grid - Compact */}
+            <div className="mt-4 grid grid-cols-4 md:grid-cols-8 gap-2">
               <InfoItem label="Age" value={selectedSkater.age?.toString() || '—'} />
               <InfoItem label="Gender" value={selectedSkater.gender} />
-              <InfoItem label="Category" value={selectedSkater.category === 'senior' ? 'Senior' : selectedSkater.category === 'junior' ? 'Junior' : selectedSkater.category} />
+              <InfoItem label="Category" value={CATEGORY_LABELS[selectedSkater.category] || selectedSkater.category} />
               <InfoItem label="Club" value={selectedSkater.club || '—'} />
-              <InfoItem label="Total Races" value={selectedSkater.stats.total_races.toString()} />
+              <InfoItem label="Races" value={selectedSkater.stats.total_races.toString()} />
               <InfoItem label="Finals" value={selectedSkater.stats.finals_appearances.toString()} />
-              <InfoItem label="Threat Score" value={selectedSkater.stats.threat_score?.toFixed(1) || '—'} />
+              <InfoItem label="Threat" value={selectedSkater.stats.threat_score?.toFixed(1) || '—'} />
               <InfoItem 
                 label="Medals" 
                 value={`🥇${selectedSkater.stats.medals.gold} 🥈${selectedSkater.stats.medals.silver} 🥉${selectedSkater.stats.medals.bronze}`} 
               />
             </div>
 
-            {/* Personal Bests */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Personal Bests</h3>
-              <div className="grid grid-cols-3 gap-4">
-                {['500', '1000', '1500'].map((dist) => (
-                  <div key={dist} className="bg-gray-50 rounded-lg p-4 text-center">
-                    <div className="text-sm text-gray-500 mb-1">{dist}m</div>
-                    <div className="text-xl font-bold text-gray-900">
-                      {selectedSkater.personal_bests?.[dist] || '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Personal Bests - Inline */}
+            <div className="mt-4 flex items-center gap-4">
+              <h3 className="text-sm font-semibold text-gray-600">PB:</h3>
+              {['500', '1000', '1500'].map((dist) => (
+                <div key={dist} className="flex items-center gap-1">
+                  <span className="text-xs text-gray-500">{dist}m</span>
+                  <span className="font-bold text-gray-900">
+                    {selectedSkater.personal_bests?.[dist] || '—'}
+                  </span>
+                </div>
+              ))}
             </div>
 
-            {/* Stats Table */}
-            <div className="mt-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Detailed Stats</h3>
+            {/* Detailed Stats - Compact inline */}
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+              <span><span className="text-gray-500">Passes:</span> <span className="font-semibold">{selectedSkater.stats.total_passes_made}</span></span>
+              <span><span className="text-gray-500">Passed:</span> <span className="font-semibold">{selectedSkater.stats.total_times_passed}</span></span>
+              <span><span className="text-gray-500">Net:</span> <span className="font-semibold">{selectedSkater.stats.net_passes}</span></span>
+              <span><span className="text-gray-500">Avg/Race:</span> <span className="font-semibold">{selectedSkater.stats.avg_passes_per_race?.toFixed(2) || '—'}</span></span>
+              <span><span className="text-gray-500">Penalty:</span> <span className="font-semibold">{selectedSkater.stats.penalty_rate ? `${(selectedSkater.stats.penalty_rate * 100).toFixed(1)}%` : '—'}</span></span>
+              <span><span className="text-gray-500">Clean:</span> <span className="font-semibold">{selectedSkater.stats.clean_race_pct ? `${(selectedSkater.stats.clean_race_pct * 100).toFixed(1)}%` : '—'}</span></span>
+            </div>
+          </div>
+
+          {/* Event-by-Event Table - Compact */}
+          {selectedSkater.events && selectedSkater.events.length > 0 && (
+            <div className="bg-white rounded-xl border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">📋 Events</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-1 px-1 font-semibold text-gray-600">Event</th>
+                      <th className="text-center py-1 px-1 font-semibold text-gray-600">Races</th>
+                      <th className="text-center py-1 px-1 font-semibold text-gray-600">Rank</th>
+                      <th className="text-center py-1 px-1 font-semibold text-gray-600">Final</th>
+                      <th className="text-center py-1 px-1 font-semibold text-gray-600">Medal</th>
+                    </tr>
+                  </thead>
                   <tbody>
-                    <StatRow label="Total Passes Made" value={selectedSkater.stats.total_passes_made} />
-                    <StatRow label="Times Passed" value={selectedSkater.stats.total_times_passed} />
-                    <StatRow label="Net Passes" value={selectedSkater.stats.net_passes} />
-                    <StatRow label="Avg Passes/Race" value={selectedSkater.stats.avg_passes_per_race?.toFixed(2)} />
-                    <StatRow label="Penalty Rate" value={selectedSkater.stats.penalty_rate ? `${(selectedSkater.stats.penalty_rate * 100).toFixed(1)}%` : '—'} />
-                    <StatRow label="Clean Race %" value={selectedSkater.stats.clean_race_pct ? `${(selectedSkater.stats.clean_race_pct * 100).toFixed(1)}%` : '—'} />
+                    {selectedSkater.events.map((ev, i) => (
+                      <tr
+                        key={ev.event_id + '-' + i}
+                        className="border-b border-gray-100 last:border-0 hover:bg-gray-50"
+                      >
+                        <td className="py-1 px-1 text-gray-900">{cleanEventName(ev.name)}</td>
+                        <td className="py-1 px-1 text-center text-gray-700">{ev.races}</td>
+                        <td className="py-1 px-1 text-center text-gray-700">{ev.best_rank ?? '—'}</td>
+                        <td className="py-1 px-1 text-center">{ev.finals_reached || ev.medal ? '✅' : '❌'}</td>
+                        <td className="py-1 px-1 text-center">{medalEmoji(ev.medal)}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Time Trend Charts */}
+          {/* Time Trend Charts - Performance Trends */}
           {Object.keys(timeTrendData).length > 0 && (
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">📈 Performance Trends</h3>
@@ -293,27 +366,40 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
                   const maxTime = Math.max(...data.map(d => d.time));
                   const padding = (maxTime - minTime) * 0.1;
                   
+                  const chartData = data.map(d => ({
+                    ...d,
+                    timestamp: d.date.getTime(),
+                  }));
+                  
+                  const minDate = Math.min(...chartData.map(d => d.timestamp));
+                  const maxDate = Math.max(...chartData.map(d => d.timestamp));
+                  
                   return (
                     <div key={distance}>
-                      <h4 className="text-md font-medium text-gray-700 mb-2">
-                        {distance}m Time Trend
-                      </h4>
+                      <div className="flex items-center gap-3 mb-2">
+                        <h4 className="text-md font-medium text-gray-700">
+                          {distance}m Time Trend
+                        </h4>
+                        <span className="text-sm font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                          PB: {formatTime(minTime)}
+                        </span>
+                      </div>
                       <ResponsiveContainer width="100%" height={250}>
                         <LineChart
-                          data={data.map((d, i) => ({
-                            ...d,
-                            index: i,
-                            label: d.competition.length > 20 ? d.competition.substring(0, 20) + '...' : d.competition,
-                          }))}
-                          margin={{ top: 10, right: 30, left: 60, bottom: 60 }}
+                          data={chartData}
+                          margin={{ top: 10, right: 80, left: 60, bottom: 40 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis 
-                            dataKey="label"
-                            angle={-45}
-                            textAnchor="end"
-                            height={80}
-                            tick={{ fontSize: 10 }}
+                            dataKey="timestamp"
+                            type="number"
+                            scale="time"
+                            domain={[minDate, maxDate]}
+                            tickFormatter={(ts) => {
+                              const d = new Date(ts);
+                              return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                            }}
+                            tick={{ fontSize: 11 }}
                           />
                           <YAxis
                             domain={[minTime - padding, maxTime + padding]}
@@ -333,9 +419,9 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
                           />
                           <ReferenceLine 
                             y={minTime} 
-                            stroke="#059669" 
+                            stroke="#D97706" 
+                            strokeWidth={2}
                             strokeDasharray="5 5"
-                            label={{ value: `PB: ${formatTime(minTime)}`, position: 'right', fontSize: 10, fill: '#059669' }}
                           />
                           <Line
                             type="monotone"
@@ -351,22 +437,72 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
                   );
                 })}
               </div>
-              {Object.keys(timeTrendData).length === 0 && (
-                <p className="text-gray-500 text-center py-8">
-                  No historical time data available for this skater.
-                </p>
-              )}
             </div>
           )}
 
-          {/* No profile data message */}
-          {!skaterProfile && (
+          {/* No time trend data message */}
+          {Object.keys(timeTrendData).length === 0 && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <p className="text-yellow-800">
-                ⚠️ No detailed profile data available for this skater. Time trends require historical race data.
+                ⚠️ No time trend data available for this skater. USS results or STL personal bests required.
               </p>
             </div>
           )}
+
+          {/* Overtake Style + Distance Performance (2-column) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Overtake Style Breakdown */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">⚡ Overtake Timing Style</h3>
+              {overtakeStyleData.every((d) => d.value === 0) ? (
+                <p className="text-gray-400 text-sm text-center py-8">No overtake data available</p>
+              ) : (
+                <div style={{ height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={overtakeStyleData}
+                        dataKey="value"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={80}
+                        label={({ name, percent }) =>
+                          `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                        }
+                      >
+                        {overtakeStyleData.map((entry, idx) => (
+                          <Cell key={idx} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value: number | undefined) => [value ?? 0, 'Passes']} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+
+            {/* Distance Performance */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Distance Performance</h3>
+              {distanceData.length === 0 ? (
+                <p className="text-gray-400 text-sm text-center py-8">No distance data available</p>
+              ) : (
+                <div style={{ height: 250 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={distanceData} margin={{ left: 10, right: 20, top: 10, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="distance" tick={{ fontSize: 12 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip />
+                      <Bar dataKey="races" name="Races" fill={CHART_COLORS.blue} radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
@@ -386,18 +522,11 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
 
 function InfoItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="bg-gray-50 rounded-lg p-3">
-      <div className="text-xs text-gray-500 uppercase tracking-wide">{label}</div>
-      <div className="text-lg font-semibold text-gray-900 mt-1">{value}</div>
+    <div className="bg-gray-50 rounded p-2 text-center">
+      <div className="text-[10px] text-gray-500 uppercase">{label}</div>
+      <div className="text-sm font-semibold text-gray-900">{value}</div>
     </div>
   );
 }
 
-function StatRow({ label, value }: { label: string; value: string | number | undefined }) {
-  return (
-    <tr className="border-b border-gray-100">
-      <td className="py-2 text-gray-600">{label}</td>
-      <td className="py-2 text-right font-medium text-gray-900">{value ?? '—'}</td>
-    </tr>
-  );
-}
+// StatRow removed - using inline stats now

@@ -15,7 +15,7 @@ interface Insight {
 export default function CrashPredictionInsights({ crashes, incidents }: Props) {
   if (crashes.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">🧠 Fall Prediction Insights</h2>
         <p className="text-gray-400 text-sm text-center py-8">No data available</p>
       </div>
@@ -113,7 +113,7 @@ export default function CrashPredictionInsights({ crashes, incidents }: Props) {
   ];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-2">🧠 Fall Prediction Insights</h2>
       <p className="text-gray-500 text-sm mb-4">
         Data-driven risk factors derived from {crashes.length} detected falls and {incidents.length} incidents.

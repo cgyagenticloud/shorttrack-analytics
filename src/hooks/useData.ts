@@ -1,24 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Manifest, Skater, Event, Heat, PassEvent, Models, Incident, CrashEvent, MedalRecord } from '../types/data';
 
-interface SkaterProfileData {
-  profiles: Record<string, {
-    skater_id: number;
-    name: string;
-    country: string;
-    gender: string;
-    age: number;
-    age_category: string;
-    home_town: string | null;
-    club: string | null;
-    personal_bests: {
-      distance: number;
-      class: string;
-      time: string;
-      competition: string;
-      date: string;
-    }[];
-  }>;
+interface TimeTrendEntry {
+  distance: number;
+  time: number;
+  time_str: string;
+  competition: string;
+  date: string | null;
+  place: number | null;
+  source: 'uss' | 'stl';
+}
+
+interface TimeTrendsData {
+  generated: string;
+  total_skaters: number;
+  trends: Record<string, Record<number, TimeTrendEntry[]>>;
 }
 
 interface AppData {
@@ -31,7 +27,7 @@ interface AppData {
   incidents: Incident[];
   crashes: CrashEvent[];
   medals: MedalRecord[];
-  profiles: SkaterProfileData['profiles'] | null;
+  timeTrends: TimeTrendsData | null;
   loading: boolean;
   error: string | null;
 }
@@ -46,7 +42,7 @@ const initialState: AppData = {
   incidents: [],
   crashes: [],
   medals: [],
-  profiles: null,
+  timeTrends: null,
   loading: true,
   error: null,
 };
@@ -63,7 +59,7 @@ export function useData() {
   const loadData = useCallback(async () => {
     setData(prev => ({ ...prev, loading: true, error: null }));
     try {
-      const [manifest, skaters, events, heats, passes, models, incidents, crashes, medals, profilesData] = await Promise.all([
+      const [manifest, skaters, events, heats, passes, models, incidents, crashes, medals, timeTrends] = await Promise.all([
         fetchJSON<Manifest>('/data/manifest.json'),
         fetchJSON<Skater[]>('/data/skaters.json'),
         fetchJSON<Event[]>('/data/events.json'),
@@ -73,10 +69,9 @@ export function useData() {
         fetchJSON<Incident[]>('/data/incidents.json').catch(() => [] as Incident[]),
         fetchJSON<CrashEvent[]>('/data/crashes.json').catch(() => [] as CrashEvent[]),
         fetchJSON<MedalRecord[]>('/data/medals.json').catch(() => [] as MedalRecord[]),
-        fetchJSON<SkaterProfileData>('/data/scraped_profiles/skater_profiles.json').catch(() => null),
+        fetchJSON<TimeTrendsData>('/data/skater_time_trends.json').catch(() => null),
       ]);
-      const profiles = profilesData?.profiles ?? null;
-      setData({ manifest, skaters, events, heats, passes, models, incidents, crashes, medals, profiles, loading: false, error: null });
+      setData({ manifest, skaters, events, heats, passes, models, incidents, crashes, medals, timeTrends, loading: false, error: null });
     } catch (err) {
       setData(prev => ({ ...prev, loading: false, error: (err as Error).message }));
     }

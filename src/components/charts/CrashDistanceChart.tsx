@@ -42,7 +42,7 @@ export default function CrashDistanceChart({ crashes, heats }: Props) {
 
   if (data.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">📏 Falls by Distance</h2>
         <p className="text-gray-400 text-sm text-center py-8">No data available</p>
       </div>
@@ -50,7 +50,7 @@ export default function CrashDistanceChart({ crashes, heats }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4">📏 Falls by Distance</h2>
       <div style={{ height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">

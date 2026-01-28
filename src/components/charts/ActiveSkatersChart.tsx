@@ -87,16 +87,16 @@ export default function ActiveSkatersChart({ category, gender }: Props) {
   const COLORS = ['#6366F1', '#8B5CF6', '#A78BFA', '#2646A7'];
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-lg font-bold text-gray-900 mb-1">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
+      <h2 className="text-base sm:text-lg font-bold text-gray-900 mb-1">
         ⛸️ Active Skaters by Season
       </h2>
-      <p className="text-gray-500 text-sm mb-4">
-        Unique skaters who competed in at least one US regional/national event per season.
+      <p className="text-gray-500 text-xs sm:text-sm mb-3 sm:mb-4">
+        Unique skaters who competed per season (US youth data).
       </p>
-      <div style={{ height: 320 }}>
+      <div style={{ height: 280 }} className="sm:h-80">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 20, right: 20, bottom: 5, left: 20 }}>
+          <BarChart data={data} margin={{ top: 15, right: 5, bottom: 5, left: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="season" tick={{ fontSize: 13, fontWeight: 600 }} />
             <YAxis tick={{ fontSize: 12 }} />

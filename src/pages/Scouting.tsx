@@ -1,8 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import type { Skater, Category } from '../types/data';
 import SkaterCard from '../components/cards/SkaterCard';
 import SkaterCompare from '../components/cards/SkaterCompare';
 import MethodologyCard from '../components/cards/MethodologyCard';
+
+const WATCHLIST_KEY = 'shorttrack_watchlist';
 
 interface Props {
   skaters: Skater[];
@@ -12,6 +14,40 @@ interface Props {
 export default function Scouting({ skaters, category }: Props) {
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Skater | null>(null);
+  const [watchlist, setWatchlist] = useState<string[]>([]);
+  const [showWatchlist, setShowWatchlist] = useState(false);
+
+  // Load watchlist on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(WATCHLIST_KEY);
+      if (saved) setWatchlist(JSON.parse(saved));
+    } catch {
+      // Ignore parse errors
+    }
+  }, []);
+
+  // Save watchlist on change
+  useEffect(() => {
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(watchlist));
+  }, [watchlist]);
+
+  const addToWatchlist = (skaterId: string) => {
+    if (!watchlist.includes(skaterId)) {
+      setWatchlist([...watchlist, skaterId]);
+    }
+  };
+
+  const removeFromWatchlist = (skaterId: string) => {
+    setWatchlist(watchlist.filter(id => id !== skaterId));
+  };
+
+  const isInWatchlist = (skaterId: string) => watchlist.includes(skaterId);
+
+  // Get watchlist skaters
+  const watchlistSkaters = useMemo(() => {
+    return skaters.filter(s => watchlist.includes(s.id));
+  }, [skaters, watchlist]);
 
   const filtered = useMemo(() => {
     return category === 'all' ? skaters : skaters.filter((s) => s.category === category);
@@ -109,7 +145,64 @@ export default function Scouting({ skaters, category }: Props) {
       </div>
 
       {/* Selected Skater Card */}
-      {selected && <SkaterCard skater={selected} />}
+      {selected && (
+        <div className="space-y-4">
+          <SkaterCard skater={selected} />
+          <div className="flex gap-2">
+            <button
+              onClick={() => isInWatchlist(selected.id) ? removeFromWatchlist(selected.id) : addToWatchlist(selected.id)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isInWatchlist(selected.id)
+                  ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {isInWatchlist(selected.id) ? '👁️ In Watchlist' : '➕ Add to Watchlist'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Watchlist Toggle */}
+      {watchlist.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-4">
+          <button
+            onClick={() => setShowWatchlist(!showWatchlist)}
+            className="w-full flex items-center justify-between text-left"
+          >
+            <h3 className="font-semibold text-gray-900">
+              👁️ Watchlist ({watchlist.length})
+            </h3>
+            <span className="text-gray-400">{showWatchlist ? '▼' : '▶'}</span>
+          </button>
+          
+          {showWatchlist && (
+            <div className="mt-4 space-y-2">
+              {watchlistSkaters.map((s) => (
+                <div key={s.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <button
+                    onClick={() => {
+                      setSelected(s);
+                      setQuery('');
+                    }}
+                    className="flex items-center gap-2 text-left hover:text-[#2646A7]"
+                  >
+                    <span>{s.flag}</span>
+                    <span className="font-medium">{s.name}</span>
+                    <span className="text-xs text-gray-500">({s.nationality})</span>
+                  </button>
+                  <button
+                    onClick={() => removeFromWatchlist(s.id)}
+                    className="text-red-500 hover:text-red-700 text-sm px-2"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Placeholder when nothing selected */}
       {!selected && !query && (

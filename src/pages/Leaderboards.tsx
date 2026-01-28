@@ -166,6 +166,32 @@ function RankBadge({ rank }: { rank: number }) {
 // Youth categories to exclude from leaderboards (Senior/Junior only)
 const YOUTH_CATEGORIES = ['youth_ja', 'youth_jb', 'youth_jc', 'youth_jd', 'youth_je', 'youth_jf', 'youth_jg'];
 
+// CSV Export helper
+function exportToCSV(data: { skater: Skater; value: number }[], boardLabel: string, formatValue: (v: number) => string) {
+  const headers = ['Rank', 'Name', 'Country', 'Gender', 'Category', boardLabel, 'Races', 'Threat Score', 'Net Passes', 'Style'];
+  const rows = data.map((item, idx) => [
+    idx + 1,
+    item.skater.name,
+    item.skater.nationality,
+    item.skater.gender,
+    item.skater.category,
+    formatValue(item.value),
+    item.skater.stats.total_races,
+    item.skater.stats.threat_score?.toFixed(1) || '',
+    item.skater.stats.net_passes,
+    STYLE_LABELS[item.skater.stats.style] || item.skater.stats.style,
+  ]);
+  
+  const csv = [headers, ...rows].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `shorttrack_${boardLabel.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Leaderboards({ skaters, category }: Props) {
   const [activeBoard, setActiveBoard] = useState<LeaderboardType>('threat_score');
   const [gender, setGender] = useState<Gender | 'all'>('all');
@@ -290,13 +316,21 @@ export default function Leaderboards({ skaters, category }: Props) {
 
       {/* Leaderboard Table */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50">
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
           <h2 className="text-lg font-bold text-gray-900 flex items-center gap-2">
             {config.emoji} {config.label}
             <span className="text-sm font-normal text-gray-500">
               ({config.higherIsBetter ? 'Higher is better' : 'Lower is better'})
             </span>
           </h2>
+          {rankedSkaters.length > 0 && (
+            <button
+              onClick={() => exportToCSV(rankedSkaters, config.label, config.format)}
+              className="px-3 py-1.5 text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors flex items-center gap-1"
+            >
+              📥 Export CSV
+            </button>
+          )}
         </div>
 
         {rankedSkaters.length === 0 ? (

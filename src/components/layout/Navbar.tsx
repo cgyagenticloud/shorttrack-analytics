@@ -32,28 +32,20 @@ export default function Navbar({ category, onCategoryChange }: NavbarProps) {
         <div className="flex items-center justify-between h-14">
           {/* Logo */}
           <NavLink to="/" className="flex items-center gap-2 text-white font-extrabold text-lg">
-            ⛸️ ShortTrack Analytics
+            <img src="/shorttrack-icon.svg" alt="Short Track" className="w-6 h-6" />
+            ShortTrack Analytics
           </NavLink>
 
-          {/* Nav groups */}
+          {/* Nav links */}
           <nav className="hidden md:flex items-center gap-1">
-            {/* Compete */}
-            <div className="flex items-center gap-0.5 mr-4">
-              <span className="text-white/40 text-xs font-bold uppercase tracking-wider mr-2">Compete</span>
-              <NavLink to="/" end className={navLink}>🎯 Race Prep</NavLink>
-              <NavLink to="/scouting" className={navLink}>🔍 Scouting</NavLink>
-              <NavLink to="/compare" className={navLink}>⚔️ Compare</NavLink>
-              <NavLink to="/skater" className={navLink}>👤 Skater</NavLink>
-              <NavLink to="/progress" className={navLink}>📈 Progress</NavLink>
-            </div>
-            {/* Analyze */}
-            <div className="flex items-center gap-0.5">
-              <span className="text-white/40 text-xs font-bold uppercase tracking-wider mr-2">Analyze</span>
-              <NavLink to="/leaderboards" className={navLink}>🏆 Leaders</NavLink>
-              <NavLink to="/analytics" className={navLink}>📊 Analytics</NavLink>
-              <NavLink to="/models" className={navLink}>🤖 Models</NavLink>
-              <NavLink to="/about" className={navLink}>ℹ️ About</NavLink>
-            </div>
+            <NavLink to="/analytics" className={navLink}>📊 Analytics</NavLink>
+            <NavLink to="/skater" className={navLink}>👤 Skater</NavLink>
+            <NavLink to="/models" className={navLink}>🤖 Models</NavLink>
+            <NavLink to="/" end className={navLink}>🎯 Race Prep</NavLink>
+            <NavLink to="/scouting" className={navLink}>🔍 Scouting</NavLink>
+            <NavLink to="/compare" className={navLink}>⚔️ Compare</NavLink>
+            <NavLink to="/leaderboards" className={navLink}>🏆 Leaders</NavLink>
+            <NavLink to="/about" className={navLink}>ℹ️ About</NavLink>
           </nav>
 
           {/* Category selector */}
@@ -70,14 +62,13 @@ export default function Navbar({ category, onCategoryChange }: NavbarProps) {
 
         {/* Mobile nav */}
         <nav className="md:hidden flex flex-wrap gap-1 pb-3">
+          <NavLink to="/analytics" className={navLink}>📊 Analytics</NavLink>
+          <NavLink to="/skater" className={navLink}>👤 Skater</NavLink>
+          <NavLink to="/models" className={navLink}>🤖 Models</NavLink>
           <NavLink to="/" end className={navLink}>🎯 Race Prep</NavLink>
           <NavLink to="/scouting" className={navLink}>🔍 Scouting</NavLink>
           <NavLink to="/compare" className={navLink}>⚔️ Compare</NavLink>
-          <NavLink to="/skater" className={navLink}>👤 Skater</NavLink>
-          <NavLink to="/progress" className={navLink}>📈 Progress</NavLink>
           <NavLink to="/leaderboards" className={navLink}>🏆 Leaders</NavLink>
-          <NavLink to="/analytics" className={navLink}>📊 Analytics</NavLink>
-          <NavLink to="/models" className={navLink}>🤖 Models</NavLink>
           <NavLink to="/about" className={navLink}>ℹ️ About</NavLink>
         </nav>
       </div>

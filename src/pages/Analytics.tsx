@@ -117,7 +117,7 @@ export default function Analytics({ skaters, heats, passes, crashes, incidents, 
   const highConfCrashes = filteredCrashes.filter((c) => c.confidence === 'high').length;
   const totalIncidents = filteredIncidents.length;
   const uniqueHeatIds = new Set(filteredHeats.map((h) => h.heat_id)).size;
-  const crashRate = uniqueHeatIds > 0 ? (totalCrashes / uniqueHeatIds * 100).toFixed(1) : '0';
+  const crashesPerHeat = uniqueHeatIds > 0 ? (totalCrashes / uniqueHeatIds).toFixed(1) : '0';
 
   return (
     <div className="space-y-6">
@@ -216,7 +216,7 @@ export default function Analytics({ skaters, heats, passes, crashes, incidents, 
         <KPICard value={totalCrashes} label="Detected Falls" />
         <KPICard value={highConfCrashes} label="High-Confidence Falls" />
         <KPICard value={totalIncidents} label="Total Incidents" />
-        <KPICard value={`${crashRate}%`} label="Fall Rate / Heat" />
+        <KPICard value={crashesPerHeat} label="Falls / Heat" />
       </div>
 
       {/* Prediction insights (full width) */}
@@ -269,7 +269,7 @@ export default function Analytics({ skaters, heats, passes, crashes, incidents, 
           { term: 'Race Phase', definition: 'When the fall occurred: Early (first ⅓ of laps), Middle (second ⅓), Late (final ⅓).' },
           { term: 'Position Context', definition: 'Where the skater was when they fell: Leading (P1), Chasing (P2–P3), or In Pack (P4+).' },
           { term: 'Positions Lost', definition: 'rank_after − rank_before. Measures severity of the fall\'s competitive impact.' },
-          { term: 'Fall Rate / Heat', definition: 'Total detected falls ÷ unique heats × 100%. Shows how frequently falls occur per race.' },
+          { term: 'Falls / Heat', definition: 'Total detected falls ÷ unique heats. Average number of falls per race.' },
           { term: 'Crash Risk Score', definition: 'Composite ranking: 3 × high-confidence falls + 1 × other falls + 0.5 × crash rate. Higher = more crash-prone skater.' },
           { term: 'Penalty', definition: 'Official ISU penalty — rule violation (e.g., impeding, false start). From results data, not inferred.' },
           { term: 'DNF / DNS', definition: 'Did Not Finish / Did Not Start. Official result codes indicating a skater withdrew or failed to complete the race.' },

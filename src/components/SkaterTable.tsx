@@ -25,7 +25,7 @@ type SortKey =
   | 'pb_1000'
   | 'pb_1500';
 
-const STYLE_ORDER = ['front_runner', 'mid_surge', 'late_mover', 'balanced', 'no_passes'];
+const STYLE_ORDER = ['front_runner', 'mid_surge', 'late_mover', 'balanced', 'no_passes', 'developing', 'sprint', 'unknown'];
 
 function parseTimeToSeconds(t: string | undefined): number {
   if (!t) return 99999;
@@ -129,16 +129,28 @@ const STYLE_COLORS: Record<string, string> = {
 export default function SkaterTable({ skaters }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('pb_500');
   const [sortAsc, setSortAsc] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filtered = useMemo(() => {
+    if (!searchQuery.trim()) return skaters;
+    const q = searchQuery.toLowerCase();
+    return skaters.filter(
+      (s) =>
+        s.name.toLowerCase().includes(q) ||
+        s.nationality.toLowerCase().includes(q) ||
+        (s.club?.toLowerCase().includes(q) ?? false)
+    );
+  }, [skaters, searchQuery]);
 
   const sorted = useMemo(() => {
-    return [...skaters].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       const va = getSortValue(a, sortKey);
       const vb = getSortValue(b, sortKey);
       if (va < vb) return sortAsc ? -1 : 1;
       if (va > vb) return sortAsc ? 1 : -1;
       return 0;
     });
-  }, [skaters, sortKey, sortAsc]);
+  }, [filtered, sortKey, sortAsc]);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -152,19 +164,28 @@ export default function SkaterTable({ skaters }: Props) {
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h2 className="text-lg font-bold text-gray-900 mb-4">
-        All Skaters ({skaters.length})
-      </h2>
-      <div className="overflow-x-auto">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        <h2 className="text-lg font-bold text-gray-900">
+          All Skaters ({sorted.length}{filtered.length !== skaters.length ? ` of ${skaters.length}` : ''})
+        </h2>
+        <input
+          type="text"
+          placeholder="Search name, country, or club..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#2646A7] focus:border-transparent w-full sm:w-64"
+        />
+      </div>
+      <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
         <table className="w-full text-sm">
-          <thead>
+          <thead className="sticky top-0 bg-white z-10">
             <tr className="border-b border-gray-200">
-              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase">#</th>
+              <th className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase bg-white">#</th>
               {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={() => handleSort(col.key)}
-                  className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-[#2646A7] select-none whitespace-nowrap"
+                  className="px-2 py-2 text-left text-xs font-semibold text-gray-500 uppercase cursor-pointer hover:text-[#2646A7] select-none whitespace-nowrap bg-white"
                 >
                   {col.label}
                   {sortKey === col.key && (

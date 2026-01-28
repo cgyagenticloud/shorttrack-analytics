@@ -111,6 +111,11 @@ export default function StrategyOutput({ result }: Props) {
           />
         </div>
         <p className="text-xs text-gray-400 text-center">{winProbability.explanation}</p>
+        {!winProbability.hasOpponents && (
+          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+            ⚠️ <strong>No opponents selected</strong> — Win probability is based on lane position only. Add opponents for a personalized strategy.
+          </div>
+        )}
       </div>
 
       {/* Key Advice */}

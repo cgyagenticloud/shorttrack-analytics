@@ -44,7 +44,7 @@ export default function CrashConfidenceChart({ crashes }: Props) {
 
   if (crashes.length === 0) {
     return (
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
         <h2 className="text-lg font-bold text-gray-900 mb-4">🔍 Detection Confidence</h2>
         <p className="text-gray-400 text-sm text-center py-8">No data available</p>
       </div>
@@ -52,7 +52,7 @@ export default function CrashConfidenceChart({ crashes }: Props) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
+    <div className="bg-white rounded-xl border border-gray-200 p-3 sm:p-6">
       <h2 className="text-lg font-bold text-gray-900 mb-4">🔍 Detection Confidence</h2>
       <div style={{ height: 320 }}>
         <ResponsiveContainer width="100%" height="100%">
