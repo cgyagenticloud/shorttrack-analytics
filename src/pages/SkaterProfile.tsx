@@ -100,11 +100,21 @@ export default function SkaterProfile({ skaters, profiles }: Props) {
   // Get profile data for selected skater
   const skaterProfile = useMemo(() => {
     if (!selectedSkater || !profiles) return null;
-    // Try to find by name match
-    const normalizedName = selectedSkater.name.toUpperCase().replace(/\s+/g, ' ');
+    
+    // Normalize skater name: "Daniel JIN" -> ["DANIEL", "JIN"]
+    const skaterParts = selectedSkater.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
+    const skaterFirst = skaterParts[0];
+    const skaterLast = skaterParts[skaterParts.length - 1];
+    
     for (const [, profile] of Object.entries(profiles)) {
-      const profileName = profile.name.toUpperCase().replace(/\s+/g, ' ');
-      if (profileName.includes(normalizedName) || normalizedName.includes(profileName.split(' ').slice(-1)[0])) {
+      // Profile name format: "JIN  Daniel" -> ["JIN", "DANIEL"]
+      const profileParts = profile.name.toUpperCase().replace(/\s+/g, ' ').trim().split(' ');
+      const profileFirst = profileParts[profileParts.length - 1]; // Last part is first name
+      const profileLast = profileParts[0]; // First part is last name
+      
+      // Match if both first and last names match (in either order)
+      if ((skaterFirst === profileFirst && skaterLast === profileLast) ||
+          (skaterFirst === profileLast && skaterLast === profileFirst)) {
         return profile;
       }
     }
