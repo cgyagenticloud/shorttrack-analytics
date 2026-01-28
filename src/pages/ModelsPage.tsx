@@ -41,6 +41,84 @@ function KPI({ value, label }: { value: string | number; label: string }) {
   );
 }
 
+// Feature descriptions for explanations
+const OVERTAKE_FEATURE_DESCRIPTIONS: Record<string, string> = {
+  rank_before: '起步位置靠后 = 更多超车空间',
+  height: '身高优势 = 步幅更长',
+  lap_fraction: '比赛后期 = 超车难度增加',
+  age: '年龄较大 = 反应速度下降',
+  dist_1500: '1500m 耐力优势',
+  round_stage: '淘汰赛后轮 = 对手更强',
+  dist_500: '500m 冲刺速度优势',
+  gender: '性别差异',
+  dist_1000: '1000m 中距离优势',
+  is_last_lap: '最后一圈 = 冲刺机会',
+};
+
+const MEDAL_FEATURE_DESCRIPTIONS: Record<string, string> = {
+  net_passes: '净超车数 = 超车能力强',
+  avg_passes_per_race: '场均超车 = 攻击性强',
+  passes_made: '总超车次数 = 经验丰富',
+  starting_position: '起步位置靠前 = 优势更大',
+  times_passed: '被超车次数少 = 防守好',
+  distance: '比赛距离适应性',
+  style: '比赛风格适配',
+  height: '身高优势',
+  age: '年龄/经验因素',
+  gender: '性别组别',
+  total_races: '比赛场次 = 经验值',
+  avg_position: '平均名次 = 稳定性',
+  finals_rate: '进决赛率 = 竞争力',
+  threat_score: '威胁分数 = 综合实力',
+  clean_race_pct: '干净比赛率 = 少犯规',
+  penalty_rate: '犯规率高 = 负面影响',
+};
+
+function FeatureExplanationTable({ 
+  data, 
+  descriptions 
+}: { 
+  data: { feature: string; effect: string; importance: number }[];
+  descriptions: Record<string, string>;
+}) {
+  return (
+    <div className="mt-4 overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">特征</th>
+            <th className="text-center py-2 px-1 font-semibold text-gray-700 w-16">效果</th>
+            <th className="text-left py-2 px-3 font-semibold text-gray-700">说明</th>
+            <th className="text-right py-2 px-3 font-semibold text-gray-700 w-20">重要性</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((item, idx) => (
+            <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+              <td className="py-2 px-3 font-mono text-xs">{item.feature}</td>
+              <td className="py-2 px-1 text-center">
+                {item.effect === 'positive' ? (
+                  <span className="text-green-600 font-bold">🟢+</span>
+                ) : item.effect === 'negative' ? (
+                  <span className="text-red-600 font-bold">🔴−</span>
+                ) : (
+                  <span className="text-gray-400">○</span>
+                )}
+              </td>
+              <td className="py-2 px-3 text-gray-600">
+                {descriptions[item.feature] ?? '—'}
+              </td>
+              <td className="py-2 px-3 text-right font-mono text-xs text-gray-500">
+                {(item.importance * 100).toFixed(1)}%
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function HorizontalBarSection({
   title,
   data,
@@ -51,6 +129,7 @@ function HorizontalBarSection({
   leftMargin,
   formatter,
   showEffectColors,
+  featureDescriptions,
 }: {
   title: string;
   data: Record<string, unknown>[];
@@ -61,6 +140,7 @@ function HorizontalBarSection({
   leftMargin?: number;
   formatter?: (v: number) => string;
   showEffectColors?: boolean;
+  featureDescriptions?: Record<string, string>;
 }) {
   // For feature importance with effects, use signedImportance
   const chartDataKey = showEffectColors ? 'signedImportance' : dataKey;
@@ -122,6 +202,12 @@ function HorizontalBarSection({
           )}
         </BarChart>
       </ResponsiveContainer>
+      {showEffectColors && featureDescriptions && (
+        <FeatureExplanationTable 
+          data={data as { feature: string; effect: string; importance: number }[]}
+          descriptions={featureDescriptions}
+        />
+      )}
     </div>
   );
 }
@@ -357,6 +443,7 @@ export default function ModelsPage({ models }: Props) {
           fill={CHART_COLORS.blue}
           leftMargin={160}
           showEffectColors={true}
+          featureDescriptions={OVERTAKE_FEATURE_DESCRIPTIONS}
         />
 
         {/* Overtake by Position */}
@@ -411,6 +498,7 @@ export default function ModelsPage({ models }: Props) {
           fill={CHART_COLORS.gold}
           leftMargin={160}
           showEffectColors={true}
+          featureDescriptions={MEDAL_FEATURE_DESCRIPTIONS}
         />
 
         {/* Medal by Position */}
